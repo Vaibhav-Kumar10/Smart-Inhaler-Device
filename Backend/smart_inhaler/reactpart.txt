@@ -1,0 +1,90 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Reminder = () => {
+  const [reminders, setReminders] = useState([]);
+  const [selectedTime, setSelectedTime] = useState('');
+  const [isReminderOn, setIsReminderOn] = useState(false);
+
+  // Fetch reminders from the backend
+  useEffect(() => {
+    axios.get('http://127.0.0.1:5000/reminders')
+      .then((response) => setReminders(response.data))
+      .catch((error) => console.error('Error fetching reminders:', error));
+  }, []);
+
+  // Toggle "Remind Me" state
+  const toggleRemindMe = () => {
+    const newState = !isReminderOn;
+    setIsReminderOn(newState);
+
+    axios.post('http://127.0.0.1:5000/toggle-remind-me', { remindMe: newState })
+      .then((response) => console.log(response.data.message))
+      .catch((error) => console.error('Error toggling Remind Me:', error));
+  };
+
+  // Add a new reminder
+  const addReminder = () => {
+    if (!isReminderOn) {
+      alert('Please enable "Remind Me" first!');
+      return;
+    }
+
+    if (!selectedTime) {
+      alert('Please select a time for the reminder!');
+      return;
+    }
+
+    axios.post('http://127.0.0.1:5000/reminders', { time: selectedTime, message: 'Inhaler Reminder' })
+      .then((response) => {
+        setReminders([...reminders, { time: selectedTime, message: 'Inhaler Reminder' }]);
+        alert('Reminder added successfully!');
+      })
+      .catch((error) => console.error('Error adding reminder:', error));
+  };
+
+  return (
+    <div className="reminder-container">
+      <h2>Reminder</h2>
+
+      {/* Toggle Reminder */}
+      <div>
+        <label>Remind Me</label>
+        <button onClick={toggleRemindMe}>
+          {isReminderOn ? 'ON' : 'OFF'}
+        </button>
+      </div>
+
+      {/* Reminder Schedule */}
+      <div>
+        <h3>Schedule</h3>
+        <ul>
+          {['10:00 AM', '10:35 AM', '01:45 PM', '03:45 PM'].map((time, index) => (
+            <li key={index}>
+              <input
+                type="radio"
+                name="reminder-time"
+                value={time}
+                onChange={() => setSelectedTime(time)}
+              />
+              {time}
+            </li>
+          ))}
+        </ul>
+        <button onClick={addReminder}>Add Reminder</button>
+      </div>
+
+      {/* Display All Logs */}
+      <div>
+        <h3>All Logs</h3>
+        <ul>
+          {reminders.map((reminder, index) => (
+            <li key={index}>{reminder.time} - {reminder.message}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default Reminder;
